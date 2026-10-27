@@ -1,29 +1,27 @@
 <div align="center">
 
-```
- _____ _   _ _____   __  __    _    ____ _   _ ___ _   _ _____ 
-|_   _| | | | ____| |  \/  |  / \  / ___| | | |_ _| \ | | ____|
-  | | | |_| |  _|   | |\/| | / _ \| |   | |_| || ||  \| |  _|  
-  | | |  _  | |___  | |  | |/ ___ \ |___|  _  || || |\  | |___ 
-  |_| |_| |_|_____| |_|  |_/_/   \_\____|_| |_|___|_| \_|_____|
-```
+# T H E &nbsp; M A C H I N E
 
-### An Autonomous Program Repair, Fault Localization, and Self-Improving Reliability Engine
+### Autonomous Program Repair &bull; Spectrum-Based Fault Localization &bull; Adaptive Reliability Framework
 
 [![CI](https://github.com/chillingbing648-sketch/The-Machine/actions/workflows/ci.yml/badge.svg)](https://github.com/chillingbing648-sketch/The-Machine/actions/workflows/ci.yml)
-[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Architecture](https://img.shields.io/badge/architecture-Dual--Loop%20APR-orange.svg)](docs/ARCHITECTURE.md)
-[![Localization](https://img.shields.io/badge/SBFL-Ochiai%20%7C%20Tarantula%20%7C%20DStar-purple.svg)](docs/RESEARCH_PLAN.md)
-[![Storage](https://img.shields.io/badge/storage-SQLite%20Append--Only%20Ledger-lightgrey.svg)](docs/EXPERIMENTS.md)
+[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-007ACC.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-44CC11.svg?style=flat-square)](LICENSE)
+[![Engine](https://img.shields.io/badge/architecture-Dual--Loop%20APR-FF6600.svg?style=flat-square)](docs/ARCHITECTURE.md)
+[![Localization](https://img.shields.io/badge/SBFL-Ochiai%20%7C%20Tarantula%20%7C%20DStar-8A2BE2.svg?style=flat-square)](docs/RESEARCH_PLAN.md)
+[![Persistence](https://img.shields.io/badge/ledger-SQLite%20Append--Only-555555.svg?style=flat-square&logo=sqlite&logoColor=white)](docs/EXPERIMENTS.md)
 
 <p align="center">
-  <b>Understand</b> &nbsp;&bull;&nbsp;
-  <b>Diagnose</b> &nbsp;&bull;&nbsp;
-  <b>Repair</b> &nbsp;&bull;&nbsp;
-  <b>Verify</b> &nbsp;&bull;&nbsp;
-  <b>Learn</b> &nbsp;&bull;&nbsp;
-  <b>Repeat</b>
+  <b>A rigorous, research-grade software engineering system designed to understand failure dynamics, localize root causes via mathematical execution spectrums, synthesize regression-free AST patches, and self-improve strategy dispatch through empirical Bayesian calibration.</b>
+</p>
+
+<p align="center">
+  <code>Understand</code> &nbsp;&rarr;&nbsp;
+  <code>Diagnose</code> &nbsp;&rarr;&nbsp;
+  <code>Repair</code> &nbsp;&rarr;&nbsp;
+  <code>Verify</code> &nbsp;&rarr;&nbsp;
+  <code>Learn</code> &nbsp;&rarr;&nbsp;
+  <code>Repeat</code>
 </p>
 
 </div>
@@ -36,24 +34,25 @@
 - [2. System Architecture](#2-system-architecture)
   - [The Dual-Loop Paradigm](#the-dual-loop-paradigm)
   - [Modular Topology](#modular-topology)
-- [3. Scientific Fault Localization (SBFL)](#3-scientific-fault-localization-sbfl)
+- [3. Repository File Structure & Architecture Map](#3-repository-file-structure--architecture-map)
+- [4. Scientific Fault Localization (SBFL)](#4-scientific-fault-localization-sbfl)
   - [Spectrum Contingency Formulation](#spectrum-contingency-formulation)
   - [Mathematical Metrics (Ochiai, Tarantula, DStar)](#mathematical-metrics-ochiai-tarantula-dstar)
   - [Hybrid Stack-Trace Slicing (STS)](#hybrid-stack-trace-slicing-sts)
-- [4. Controlled Fault Injection Engine](#4-controlled-fault-injection-engine)
+- [5. Controlled Fault Injection Engine](#5-controlled-fault-injection-engine)
   - [AST Mutation Operators](#ast-mutation-operators)
   - [Mutation Cataloguing & Non-Equivalence](#mutation-cataloguing--non-equivalence)
-- [5. Stratified Repair & Candidate Synthesis](#5-stratified-repair--candidate-synthesis)
-- [6. Multi-Tier Validation & Overfitting Rejection](#6-multi-tier-validation--overfitting-rejection)
-- [7. Benchmark Targets](#7-benchmark-targets)
-- [8. Quickstart & Installation](#8-quickstart--installation)
-- [9. Command-Line Interface & Demonstration](#9-command-line-interface--demonstration)
+- [6. Stratified Repair & Candidate Synthesis](#6-stratified-repair--candidate-synthesis)
+- [7. Multi-Tier Validation & Overfitting Rejection](#7-multi-tier-validation--overfitting-rejection)
+- [8. Benchmark Targets](#8-benchmark-targets)
+- [9. Quickstart & Installation](#9-quickstart--installation)
+- [10. Command-Line Interface & Demonstration](#10-command-line-interface--demonstration)
   - [Vertical Slice Demonstration](#vertical-slice-demonstration)
   - [Multi-Target Benchmark Evaluation](#multi-target-benchmark-evaluation)
   - [Telemetry Ledger Inspection](#telemetry-ledger-inspection)
-- [10. Safety, Isolation & Trust Model](#10-safety-isolation--trust-model)
-- [11. Engineering Roadmap](#11-engineering-roadmap)
-- [12. Research Standard & Citation](#12-research-standard--citation)
+- [11. Safety, Isolation & Trust Model](#11-safety-isolation--trust-model)
+- [12. Engineering Roadmap](#12-engineering-roadmap)
+- [13. Research Standard & Citation](#13-research-standard--citation)
 
 ---
 
@@ -130,7 +129,69 @@ Empirical Calibration -> Weakness Mining -> Strategy Re-weighting -> Human Appro
 
 ---
 
-## 3. Scientific Fault Localization (SBFL)
+## 3. Repository File Structure & Architecture Map
+
+The project is structured as a modular research monolith with clear separation between core algorithms, persistence models, executable targets, and verification suites:
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── ci.yml                     # Multi-OS matrix CI pipeline (Ubuntu, Windows)
+├── benchmarks/                        # Deterministic target benchmark suites
+│   ├── calculator/                    # Benchmark 1: Arithmetic & boundary constraints
+│   │   ├── __init__.py                # Target package initialization
+│   │   ├── calculator.py              # Implementation under test (clamp, factorial, divide)
+│   │   └── test_calculator.py         # 13-test regression suite
+│   └── inventory/                     # Benchmark 2: Transactional order fulfillment
+│       ├── __init__.py                # Target package initialization
+│       ├── inventory.py               # Inventory management, restock & discount algorithms
+│       └── test_inventory.py          # 16-test transactional regression suite
+├── docs/                              # Research plans & engineering specifications
+│   ├── ARCHITECTURE.md                # System topology, module contracts, and data flow
+│   ├── EXPERIMENTS.md                 # Relational SQLite schema & reproduction protocols
+│   ├── RESEARCH_PLAN.md               # Formal research questions (RQ1-4), hypotheses & SBFL
+│   ├── ROADMAP.md                     # Phased milestone matrix (Phases 0 through 9)
+│   └── SAFETY.md                      # Subprocess sandboxing, trust boundaries & governance
+├── tests/                             # Comprehensive test suite (22 tests, 100% pass)
+│   ├── test_coverage_collector.py     # Statement execution tracing & spectrum verification
+│   ├── test_database.py               # SQLite telemetry, mutations & candidate queries
+│   ├── test_e2e_pipeline.py           # End-to-end repair cycle integration
+│   ├── test_failure_detector.py       # Subprocess timeouts & exception trace extraction
+│   ├── test_fault_injector.py         # COM & OB1 mutation operators & path authorization
+│   ├── test_fault_injector_phase2.py  # NGR & SDR operators & AST cataloguer verification
+│   ├── test_fault_localizer.py        # Stack-trace slicing & score normalization
+│   ├── test_inventory_benchmark.py    # Multi-target transactional APR verification
+│   ├── test_repair_engine.py          # Candidate patch synthesis & AST templates
+│   ├── test_sbfl.py                   # Ochiai, Tarantula, DStar & MRR metric calculations
+│   └── test_validation_engine.py      # Anti-pattern filters & 4-tier validation firewall
+├── the_machine/                       # Core engine package
+│   ├── __init__.py                    # Version specification & package exports
+│   ├── cli.py                         # Command-line interface (demo, benchmark, inspect)
+│   ├── core/                          # Data structures and storage
+│   │   ├── __init__.py                # Core exports
+│   │   ├── database.py                # SQLite append-only ledger implementation
+│   │   └── models.py                  # Strongly typed dataclasses & telemetry schemas
+│   └── engine/                        # Analytical and repair sub-engines
+│       ├── __init__.py                # Engine module exports
+│       ├── coverage_collector.py      # Per-test statement execution spectrum collector
+│       ├── experiment_manager.py      # Ephemeral workspace orchestrator & rollback
+│       ├── failure_detector.py        # Sandboxed subprocess runner & traceback parser
+│       ├── fault_injector.py          # AST mutation engine & mutation cataloguer
+│       ├── fault_localizer.py         # Hybrid SBFL (Ochiai/Tarantula/DStar) + STS ranker
+│       ├── repair_engine.py           # Stratified candidate patch synthesis
+│       ├── sbfl_tracer.py             # Subprocess pytest hook plugin for tracing
+│       ├── strategy_selector.py       # Multi-armed bandit Bayesian dispatch
+│       └── validation_engine.py       # Multi-tier firewall & token-boundary patcher
+├── pyproject.toml                     # Modern PEP 621 build specification
+├── requirements.txt                   # Dependency manifests
+├── .gitignore                         # Build, database, and workspace exclusion rules
+└── README.md                          # Primary research & systems documentation
+```
+
+---
+
+## 4. Scientific Fault Localization (SBFL)
 
 ### Spectrum Contingency Formulation
 
@@ -149,7 +210,7 @@ For every statement $s$, The Machine constructs a $2 \times 2$ contingency table
 The Machine implements three foundational spectrum-based suspiciousness coefficients:
 
 #### 1. Ochiai Suspiciousness Coefficient
-The Ochiai metric (widely demonstrated to offer superior fault isolation in software engineering literature) computes the cosine similarity between the statement execution vector and the test failure vector:
+The Ochiai metric computes the cosine similarity between the statement execution vector and the test failure vector:
 
 $$\text{Ochiai}(s) = \frac{e_f(s)}{\sqrt{\left(e_f(s) + n_f(s)\right) \times \left(e_f(s) + e_p(s)\right)}}$$
 
@@ -179,7 +240,7 @@ When evaluating against ground truth defects (line $L^*$), The Machine records:
 
 ---
 
-## 4. Controlled Fault Injection Engine
+## 5. Controlled Fault Injection Engine
 
 To systematically measure repair performance without relying on synthetic mocks, `FaultInjector` injects deterministic, traceable mutations directly into the target code's Abstract Syntax Tree (AST).
 
@@ -200,12 +261,12 @@ The engine provides an automated scanner that walks any target file's AST and ca
 
 ```bash
 python -c "from the_machine.engine.fault_injector import FaultInjector; from pathlib import Path; print(len(FaultInjector().catalogue_all_mutations(Path('benchmarks/calculator/calculator.py'))))"
-# Returns: 28 feasible mutation points
+# Returns: 28 feasible mutation points in the baseline target
 ```
 
 ---
 
-## 5. Stratified Repair & Candidate Synthesis
+## 6. Stratified Repair & Candidate Synthesis
 
 The Machine approaches patch synthesis through a stratified hierarchy: deterministic transformations first, followed by bounded search spaces.
 
@@ -235,7 +296,7 @@ Suspicious Location Ranked by SBFL
 
 ---
 
-## 6. Multi-Tier Validation & Overfitting Rejection
+## 7. Multi-Tier Validation & Overfitting Rejection
 
 A primary failure mode of automated program repair is **patch overfitting**: a synthesized patch passes the failing test by silencing errors, weakening assertions, or breaking unexercised functionality.
 
@@ -263,23 +324,23 @@ Candidate Patch Generated
 
 ---
 
-## 7. Benchmark Targets
+## 8. Benchmark Targets
 
 The repository includes two self-contained, deterministic target benchmarks used for reproducible evaluation:
 
 ### 1. `benchmarks/calculator`
-- **Module:** [benchmarks/calculator/calculator.py](file:///benchmarks/calculator/calculator.py)
-- **Suite:** 13 unit and boundary regression tests ([test_calculator.py](file:///benchmarks/calculator/test_calculator.py)).
+- **Module:** [benchmarks/calculator/calculator.py](benchmarks/calculator/calculator.py)
+- **Suite:** 13 unit and boundary regression tests ([test_calculator.py](benchmarks/calculator/test_calculator.py)).
 - **Domain:** Boundary clamping (`clamp`), recursive input validation (`factorial`), and division guards (`divide`).
 
 ### 2. `benchmarks/inventory`
-- **Module:** [benchmarks/inventory/inventory.py](file:///benchmarks/inventory/inventory.py)
-- **Suite:** 16 unit and transactional regression tests ([test_inventory.py](file:///benchmarks/inventory/test_inventory.py)).
+- **Module:** [benchmarks/inventory/inventory.py](benchmarks/inventory/inventory.py)
+- **Suite:** 16 unit and transactional regression tests ([test_inventory.py](benchmarks/inventory/test_inventory.py)).
 - **Domain:** Transactional stock deductibility, restock validation guards, atomic fulfillment, and capped VIP discount algorithms.
 
 ---
 
-## 8. Quickstart & Installation
+## 9. Quickstart & Installation
 
 ### Prerequisites
 
@@ -316,7 +377,7 @@ pytest tests/ -v
 
 ---
 
-## 9. Command-Line Interface & Demonstration
+## 10. Command-Line Interface & Demonstration
 
 The Machine includes a CLI accessible via `the-machine` or `python -m the_machine.cli`.
 
@@ -446,7 +507,7 @@ python -m the_machine.cli inspect exp_1793131721_11903e
 
 ---
 
-## 10. Safety, Isolation & Trust Model
+## 11. Safety, Isolation & Trust Model
 
 The Machine enforces strict security and trust boundaries when evaluating untrusted program code and synthesized candidates:
 
@@ -478,7 +539,7 @@ The Machine enforces strict security and trust boundaries when evaluating untrus
 
 ---
 
-## 11. Engineering Roadmap
+## 12. Engineering Roadmap
 
 | Phase | Milestone | Core Focus | Status |
 | :---: | :--- | :--- | :---: |
@@ -497,7 +558,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for full acceptance criteria across all p
 
 ---
 
-## 12. Research Standard & Citation
+## 13. Research Standard & Citation
 
 The Machine is developed as an open scientific platform for Automated Program Repair and Software Reliability Research.
 
@@ -505,7 +566,7 @@ If you utilize The Machine in academic research, benchmark evaluations, or indus
 
 ```bibtex
 @software{the_machine_2026,
-  author = {Dubey, Prateek and The Machine Contributors},
+  author = {Dubey, Harsh and The Machine Contributors},
   title = {The Machine: An Autonomous Program Repair, Fault Localization, and Self-Improving Reliability Engine},
   year = {2026},
   publisher = {GitHub},
@@ -517,5 +578,5 @@ If you utilize The Machine in academic research, benchmark evaluations, or indus
 ---
 
 <div align="center">
-  <sub>Engineered with rigor. Maintained by The Machine Research Team.</sub>
+  <sub>Engineered with rigor. Authored by <b>Harsh Dubey</b> &bull; Maintained by The Machine Research Contributors.</sub>
 </div>

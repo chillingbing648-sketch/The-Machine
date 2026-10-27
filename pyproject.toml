@@ -9,7 +9,7 @@ description = "Autonomous Program Repair, Fault Localization, and Self-Improving
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "The Machine Research Team" }
+    { name = "Harsh Dubey" }
 ]
 dependencies = [
     "pytest>=8.0.0",
