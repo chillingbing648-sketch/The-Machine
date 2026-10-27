@@ -85,7 +85,7 @@ class CoverageCollector:
                 text=True,
                 timeout=timeout_sec,
             )
-            stdout = proc.stdout
+            stdout = proc.stdout.decode("utf-8", errors="replace") if isinstance(proc.stdout, bytes) else (proc.stdout or "")
         except Exception:
             stdout = ""
 

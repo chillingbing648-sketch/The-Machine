@@ -65,8 +65,8 @@ class FailureDetector:
             exit_code = process.returncode
         except subprocess.TimeoutExpired as exc:
             timed_out = True
-            stdout = exc.stdout or ""
-            stderr = exc.stderr or ""
+            stdout = exc.stdout.decode("utf-8", errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+            stderr = exc.stderr.decode("utf-8", errors="replace") if isinstance(exc.stderr, bytes) else (exc.stderr or "")
             exit_code = -1
         except Exception as exc:
             stderr = f"Subprocess invocation error: {str(exc)}"
