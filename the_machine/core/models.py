@@ -35,10 +35,12 @@ class ExperimentConfig:
     target_name: str
     target_rel_path: str
     test_rel_path: str
-    timeout_sec: float = 30.0
+    timeout_sec: float = 60.0
     random_seed: int = 42
     max_candidates: int = 10
-    enabled_strategies: List[str] = field(default_factory=lambda: ["deterministic_template", "search_ast"])
+    enabled_strategies: List[str] = field(default_factory=lambda: ["deterministic_template", "search_ast", "neural_llm"])
+    verify_flakiness: bool = False
+    flakiness_runs: int = 2
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -192,6 +194,9 @@ class ValidationResult:
     failing_test_report: Optional[TestExecutionReport] = None
     regression_test_report: Optional[TestExecutionReport] = None
     execution_time_sec: float = 0.0
+    is_flaky: bool = False
+    flakiness_runs: int = 1
+    flakiness_passed: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -204,7 +209,20 @@ class ValidationResult:
             "failing_test_report": self.failing_test_report.to_dict() if self.failing_test_report else None,
             "regression_test_report": self.regression_test_report.to_dict() if self.regression_test_report else None,
             "execution_time_sec": self.execution_time_sec,
+            "is_flaky": self.is_flaky,
+            "flakiness_runs": self.flakiness_runs,
+            "flakiness_passed": self.flakiness_passed,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ValidationResult":
+        d = dict(data)
+        d["status"] = ValidationStatus(d["status"])
+        if d.get("failing_test_report"):
+            d["failing_test_report"] = TestExecutionReport.from_dict(d["failing_test_report"])
+        if d.get("regression_test_report"):
+            d["regression_test_report"] = TestExecutionReport.from_dict(d["regression_test_report"])
+        return cls(**d)
 
 
 @dataclass

@@ -174,6 +174,8 @@ class ExperimentManager:
                     workspace_path=workspace_path,
                     failing_test_id=failing_test_name,
                     timeout_sec=config.timeout_sec,
+                    verify_flakiness=config.verify_flakiness,
+                    flakiness_runs=config.flakiness_runs,
                 )
                 self.db.record_patch_evaluation(experiment_id, candidate, validation)
 

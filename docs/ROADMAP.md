@@ -12,8 +12,8 @@ This roadmap outlines the systematic, phased implementation of The Machine from 
 | **1** | First Functioning Slice | End-to-end pipeline: mutation, detection, localization, repair, validation, DB | **COMPLETED** |
 | **2** | Generalized Fault Injection | 6 AST mutation operators, multi-target benchmarks, mutation catalog | **COMPLETED** |
 | **3** | Evidence-Based SBFL | Ochiai coverage matrix, stack slicing, Top-1/Top-3/MRR metrics | **COMPLETED** |
-| **4** | Multi-Strategy Repair Engine | Template library, AST bounded search, pluggable LLM adapter | Planned |
-| **5** | Robust Validation & Sandboxing | Invariant checking, anti-triviality heuristics, strict resource limits | Planned |
+| **4** | Multi-Strategy Repair Engine | Template library, AST bounded search, pluggable LLM adapter | **COMPLETED** |
+| **5** | Robust Validation & Sandboxing | Invariant checking, anti-triviality heuristics, strict resource limits | **COMPLETED** |
 | **6** | Empirical Strategy Selection | Contextual bandit dispatch, historical repair learning | Planned |
 | **7** | Self-Improvement & Meta-Repair | Machine self-evaluation, hypothesis-driven policy updates, human approval gate | Planned |
 | **8** | Research-Grade Benchmarking | Held-out validation suites, empirical papers, comparative APR evaluation | Planned |
@@ -54,15 +54,15 @@ This roadmap outlines the systematic, phased implementation of The Machine from 
 - [x] Evaluation harness calculating Top-1, Top-3, Top-5, and Mean Reciprocal Rank (MRR) accuracy against ground truth.
 
 ### Phase 4 — Multi-Strategy Repair Engine
-- [ ] Strategy interface `RepairStrategy` with uniform candidate patch schema.
-- [ ] Deterministic pattern templates for common syntax faults.
-- [ ] Search-based AST mutation engine exploring permitted transformations within budget.
-- [ ] Pluggable external LLM adapter interface with prompt guardrails and AST sanitization.
+- [x] Strategy interface `RepairStrategy` with uniform candidate patch schema.
+- [x] Deterministic pattern templates for common syntax faults (comparison, arithmetic, boundary, boolean, guards, returns).
+- [x] Search-based AST mutation engine exploring permitted transformations within budget.
+- [x] Pluggable external LLM adapter interface with prompt guardrails, AST sanitization, and MockLLMProvider.
 
 ### Phase 5 — Robust Validation & Sandboxing
-- [ ] AST diff analysis detecting assertion tampering, test modification, or dummy returns.
-- [ ] Subprocess resource enforcement (memory limit, CPU affinity where supported, execution timeout).
-- [ ] Test flakiness detector running candidate patches multiple times under varied seed/order.
+- [x] AST diff analysis detecting assertion tampering, test modification, exception swallowing, or dummy returns.
+- [x] Subprocess resource enforcement (memory limit, CPU affinity where supported, execution timeout scaled to 60s+).
+- [x] Test flakiness detector running candidate patches multiple times under varied seed/order.
 
 ### Phase 6 — Learning & Strategy Selection
 - [ ] Contextual multi-armed bandit selector (Thompson Sampling / Upper Confidence Bound).

@@ -153,7 +153,7 @@ The project is structured as a modular research monolith with clear separation b
 │   ├── RESEARCH_PLAN.md               # Formal research questions (RQ1-4), hypotheses & SBFL
 │   ├── ROADMAP.md                     # Phased milestone matrix (Phases 0 through 9)
 │   └── SAFETY.md                      # Subprocess sandboxing, trust boundaries & governance
-├── tests/                             # Comprehensive test suite (22 tests, 100% pass)
+├── tests/                             # Comprehensive test suite (36 tests, 100% pass)
 │   ├── test_coverage_collector.py     # Statement execution tracing & spectrum verification
 │   ├── test_database.py               # SQLite telemetry, mutations & candidate queries
 │   ├── test_e2e_pipeline.py           # End-to-end repair cycle integration
@@ -163,8 +163,10 @@ The project is structured as a modular research monolith with clear separation b
 │   ├── test_fault_localizer.py        # Stack-trace slicing & score normalization
 │   ├── test_inventory_benchmark.py    # Multi-target transactional APR verification
 │   ├── test_repair_engine.py          # Candidate patch synthesis & AST templates
+│   ├── test_repair_engine_phase4.py   # Multi-strategy arithmetic, boolean, neural LLM adapter
 │   ├── test_sbfl.py                   # Ochiai, Tarantula, DStar & MRR metric calculations
-│   └── test_validation_engine.py      # Anti-pattern filters & 4-tier validation firewall
+│   ├── test_validation_engine.py      # Anti-pattern filters & 4-tier validation firewall
+│   └── test_validation_engine_phase5.py # Anti-triviality invariants, scope guard & flakiness detector
 ├── the_machine/                       # Core engine package
 │   ├── __init__.py                    # Version specification & package exports
 │   ├── cli.py                         # Command-line interface (demo, benchmark, inspect)
@@ -266,9 +268,9 @@ python -c "from the_machine.engine.fault_injector import FaultInjector; from pat
 
 ---
 
-## 6. Stratified Repair & Candidate Synthesis
+## 6. Stratified Multi-Strategy Repair (Phase 4)
 
-The Machine approaches patch synthesis through a stratified hierarchy: deterministic transformations first, followed by bounded search spaces.
+The Machine approaches patch synthesis through a stratified hierarchy: deterministic transformations first, followed by bounded search spaces, and pluggable neural patch synthesis.
 
 ```
 Suspicious Location Ranked by SBFL
@@ -283,43 +285,60 @@ Suspicious Location Ranked by SBFL
 [ Strategy 3: Neural / LLM Adapter ]    ──(Plausible?)──> [ Validation Engine ]
 ```
 
-1. **`DeterministicTemplateStrategy`:** Targets localized syntax defect patterns with sub-millisecond execution. Evaluates operator reversals, off-by-one shifts, and guard inversions.
-2. **`SearchBasedASTStrategy`:** Systematically enumerates legal replacement nodes within the AST neighborhood of suspicious lines.
-3. **Pluggable Interface (`RepairStrategy`):** All repair strategies adhere to a common contract:
-   ```python
-   def generate_patches(
-       location: SuspiciousLocation,
-       report: TestExecutionReport,
-       workspace_path: Path
-   ) -> List[PatchCandidate]: ...
-   ```
+1. **`DeterministicTemplateStrategy`:** Targets localized syntax defect patterns with sub-millisecond execution:
+   - **Comparison Operator Inversion:** `<` $\leftrightarrow$ `<=`, `>` $\leftrightarrow$ `>=`, `==` $\leftrightarrow$ `!=`, `in` $\leftrightarrow$ `not in`, `is` $\leftrightarrow$ `is not`.
+   - **Arithmetic Operator Substitution:** `+` $\leftrightarrow$ `-`, `*` $\leftrightarrow$ `/`, `//`, `%`.
+   - **Off-by-One Boundary Adjustments:** $c \to c \pm 1$ on integer literals and boundary conditions.
+   - **Boolean Logic Negation:** `not expr` $\to$ `expr`, `True` $\leftrightarrow$ `False`, `and` $\leftrightarrow$ `or`.
+   - **Null / None Guard Insertion:** Generates guarded returns and fallback ternaries on `AttributeError` or `NoneType` faults.
+   - **Return Fallbacks:** Edge-case default value substitutions (`None`, `False`, `True`, `0`, `[]`).
+2. **`SearchBasedASTStrategy`:** Systematically enumerates legal replacement nodes within the AST neighborhood ($[L-2, L+2]$) of suspicious statements, scoring candidates by tree edit distance.
+3. **`NeuralRepairStrategy` (Pluggable LLM Adapter):**
+   - Decoupled `LLMProvider` abstraction supporting `MockLLMProvider` (offline deterministic benchmarks and unit tests) and `OpenAILikeProvider` (HTTP client for OpenAI, Gemini, and local vLLM/Ollama endpoints).
+   - Strict prompt guardrails requiring code-only fenced blocks.
+   - AST pre-compilation check before submitting to the validation firewall.
+4. **Fair Budget Allocation:** Candidate generation distributes budget evenly across top suspicious lines (`max_per_location`), ensuring lower-ranked root causes receive search iterations.
 
 ---
 
-## 7. Multi-Tier Validation & Overfitting Rejection
+## 7. Multi-Tier Validation & Sandboxing (Phase 5)
 
 A primary failure mode of automated program repair is **patch overfitting**: a synthesized patch passes the failing test by silencing errors, weakening assertions, or breaking unexercised functionality.
 
-The Machine implements a 4-tier validation firewall:
+The Machine implements a 5-tier validation firewall:
 
 ```
 Candidate Patch Generated
   |
   v
-[ Tier 1: Scope & File Boundaries ] ───────> Rejects diffs touching tests or outside workspace
+[ Tier 1: Scope & File Confinement ] ──────> Rejects diffs touching tests or outside workspace
   |
   v
-[ Tier 2: AST Anti-Pattern Analysis ] ─────> Rejects `except: pass`, empty `return None` stubs
+[ Tier 2: Anti-Triviality Invariants ] ────> Rejects assertion deletion, `except: pass`, empty stubs
   |
   v
-[ Tier 3: Syntax Compilation ] ────────────> Rejects syntactically malformed AST transforms
+[ Tier 3: Syntax AST Compilation ] ────────> Rejects syntactically malformed AST transforms
   |
   v
 [ Tier 4: Two-Stage Test Execution ]
   ├── 4A: Target Failing Test Check ───────> Failing test must transition FAIL -> PASS
   └── 4B: Full Regression Suite Check ────> Entire regression suite must pass with 0 errors
+  |
+  v
+[ Tier 5: Flakiness Stability Sandbox ] ───> Repeated verification (N runs) to reject order-dependent fixes
 ```
 
+- **`AntiTrivialityChecker`:**
+  - Scope guard: Rejects any patch targeting test files (`test_*.py`, `*_test.py`, `tests/`).
+  - Assertion tampering: Detects and rejects patches that delete `assert` statements.
+  - Exception swallowing: Flags `except: pass` or `except Exception: return ...` blocks.
+  - Function stubbing: Rejects replacing function bodies with vacuous `pass` statements.
+- **`FlakinessDetector`:**
+  - Evaluates passing patches across multiple test runs ($N \ge 2$) with varied seeds/orders to guarantee the fix is deterministic and reproducible.
+- **Subprocess Sandboxing:**
+  - Configurable timeouts (scaled from 30s to 60s+ to prevent CPU starvation on heavy workloads).
+  - Sanitized environment stripping API keys, tokens, and credentials.
+  - Guaranteed workspace rollback in `finally` blocks.
 - **Line-Targeted Word-Boundary Application:** Patches are applied strictly to the target statement using token-boundary regex matching ($\backslash b\text{op}\backslash b$) within a localized line window ($[L - 4, L + 4]$), completely avoiding substring collisions (e.g. replacing `quantity` without corrupting `stock_quantity`).
 
 ---
@@ -547,8 +566,8 @@ The Machine enforces strict security and trust boundaries when evaluating untrus
 | **1** | First Functioning Slice | End-to-end pipeline: mutation, detection, localization, repair, DB | **COMPLETED** |
 | **2** | Generalized Fault Injection | 6 AST mutation operators (`COM`, `BLI`, `OB1`, `CRS`, `NGR`, `SDR`), cataloguer | **COMPLETED** |
 | **3** | Evidence-Based SBFL | Ochiai coverage matrix, stack slicing, Top-1/Top-3/MRR metrics | **COMPLETED** |
-| **4** | Multi-Strategy Repair Engine | Template library, AST bounded search, pluggable LLM adapter | *In Progress* |
-| **5** | Robust Validation & Sandboxing | Invariant checking, anti-triviality heuristics, strict resource limits | *Planned* |
+| **4** | Multi-Strategy Repair Engine | Template library, AST bounded search, pluggable LLM adapter | **COMPLETED** |
+| **5** | Robust Validation & Sandboxing | Invariant checking, anti-triviality heuristics, flakiness sandbox | **COMPLETED** |
 | **6** | Empirical Strategy Selection | Contextual bandit dispatch, historical repair learning | *Planned* |
 | **7** | Self-Improvement & Meta-Repair | Machine self-evaluation, hypothesis-driven policy updates, human gate | *Planned* |
 | **8** | Research-Grade Benchmarking | Held-out validation suites, empirical papers, comparative APR evaluation | *Planned* |

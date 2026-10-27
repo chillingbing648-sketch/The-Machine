@@ -1,10 +1,10 @@
-"""Validation Engine: enforces test passage, regression safety, and anti-triviality invariants."""
+"""Validation Engine: enforces test passage, regression safety, anti-triviality invariants, and flakiness detection."""
 
 import ast
 import re
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 from the_machine.core.models import (
     PatchCandidate,
     TestExecutionReport,
@@ -14,18 +14,104 @@ from the_machine.core.models import (
 from the_machine.engine.failure_detector import FailureDetector
 
 
+class AntiTrivialityChecker:
+    """
+    Validates candidate patches against anti-patterns and trivial bypass invariants:
+    - Scope violation: modifying test directories or files
+    - Assertion deletion / tampering
+    - Catch-all exception silencing (empty except: pass or return)
+    - Function body stubbing (emptying logic to pass)
+    - Vacuous literal return cheating
+    """
+
+    @classmethod
+    def check_scope(cls, file_path: Path) -> Tuple[bool, str]:
+        """Verify that the target file is not a test suite file."""
+        test_dir_names = {"test", "tests", "testing", "unit_tests", "integration_tests", "benchmark_tests"}
+        if (
+            file_path.name.startswith("test_")
+            or file_path.stem.endswith("_test")
+            or any(part.lower() in test_dir_names for part in file_path.parts)
+        ):
+            return False, "Candidate patch targets test suite files, violating safety boundary"
+        return True, ""
+
+    @classmethod
+    def check_code_invariants(cls, original_code: str, replacement_code: str) -> Tuple[bool, str]:
+        """Detect trivial/vacuous repair patterns via AST inspection."""
+        # 1. Assertion suppression
+        if "assert " in original_code and "assert " not in replacement_code:
+            return False, "Deletes or suppresses assertion statement"
+
+        try:
+            tree = ast.parse(replacement_code)
+        except SyntaxError:
+            # Syntax errors will be caught separately
+            return True, ""
+
+        for node in ast.walk(tree):
+            # 2. Check for empty exception silencing: except ...: pass
+            if isinstance(node, ast.ExceptHandler):
+                if len(node.body) == 1 and isinstance(node.body[0], (ast.Pass, ast.Return)):
+                    return False, "Suppresses exceptions with empty 'except: pass' or vacuous return"
+            # 3. Check for dummy empty function pass
+            if isinstance(node, ast.FunctionDef):
+                if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+                    return False, "Replaces functional implementation with empty 'pass' stub"
+
+        return True, ""
+
+
+class FlakinessDetector:
+    """
+    Evaluates candidate patch reproducibility across repeated test runs
+    to guarantee patches do not pass through test flakiness or execution-order dependency.
+    """
+
+    def __init__(self, failure_detector: FailureDetector):
+        self.failure_detector = failure_detector
+
+    def verify_stability(
+        self,
+        workspace_path: Path,
+        runs: int = 2,
+        timeout_sec: float = 60.0,
+    ) -> Tuple[bool, int, int]:
+        """
+        Execute full regression suite across multiple iterations.
+        Returns: (is_stable, total_passed_runs, total_requested_runs)
+        """
+        passed_runs = 0
+        for _ in range(runs):
+            report = self.failure_detector.run_tests(
+                workspace_path,
+                test_target=None,
+                timeout_sec=timeout_sec,
+            )
+            if report.passed:
+                passed_runs += 1
+            else:
+                return False, passed_runs, runs
+
+        return True, passed_runs, runs
+
+
 class ValidationEngine:
-    """Evaluates candidate patches against regression suites and anti-overfitting rules."""
+    """Evaluates candidate patches against regression suites, anti-overfitting rules, and flakiness checks."""
 
     def __init__(self, failure_detector: Optional[FailureDetector] = None):
         self.failure_detector = failure_detector or FailureDetector()
+        self.anti_triviality_checker = AntiTrivialityChecker()
+        self.flakiness_detector = FlakinessDetector(self.failure_detector)
 
     def validate_patch(
         self,
         candidate: PatchCandidate,
         workspace_path: Path,
         failing_test_id: Optional[str] = None,
-        timeout_sec: float = 30.0,
+        timeout_sec: float = 60.0,
+        verify_flakiness: bool = False,
+        flakiness_runs: int = 2,
     ) -> ValidationResult:
         """
         Validate patch in workspace:
@@ -34,40 +120,43 @@ class ValidationEngine:
         3. Application of patch to workspace.
         4. Re-run failing test.
         5. Full regression suite verification.
-        6. Guaranteed workspace restoration.
+        6. Flakiness stability verification (if enabled).
+        7. Guaranteed workspace restoration.
         """
         start_time = time.time()
         workspace = Path(workspace_path).resolve()
         target_file = Path(candidate.file_path)
 
         # 1. Scope check: forbidden to touch test files
-        if "test_" in target_file.name or "tests" in target_file.parts:
+        scope_ok, scope_err = self.anti_triviality_checker.check_scope(target_file)
+        if not scope_ok:
             return ValidationResult(
                 status=ValidationStatus.ANTI_PATTERN,
                 failing_test_passed=False,
                 regression_tests_passed=False,
                 syntax_valid=False,
                 anti_pattern_detected=True,
-                message="Candidate patch modifies test files, violating safety boundary",
+                message=scope_err,
                 execution_time_sec=time.time() - start_time,
             )
 
         # 2. Anti-pattern detection on replacement code
-        anti_pattern, reason = self._detect_anti_patterns(candidate.replacement_code)
-        if anti_pattern:
+        inv_ok, inv_reason = self.anti_triviality_checker.check_code_invariants(
+            candidate.original_code, candidate.replacement_code
+        )
+        if not inv_ok:
             return ValidationResult(
                 status=ValidationStatus.ANTI_PATTERN,
                 failing_test_passed=False,
                 regression_tests_passed=False,
                 syntax_valid=True,
                 anti_pattern_detected=True,
-                message=f"Anti-pattern detected: {reason}",
+                message=f"Anti-pattern detected: {inv_reason}",
                 execution_time_sec=time.time() - start_time,
             )
 
-        # 3. Syntax check
+        # 3. Syntax check and substitution
         original_content = target_file.read_text(encoding="utf-8")
-        # Line-targeted replacement with word boundary protection
         lines = original_content.splitlines(keepends=True)
         target_idx = candidate.line_number - 1
         replaced = False
@@ -143,19 +232,7 @@ class ValidationEngine:
                 workspace, test_target=None, timeout_sec=timeout_sec
             )
 
-            if regression_report.passed:
-                return ValidationResult(
-                    status=ValidationStatus.ACCEPTED,
-                    failing_test_passed=True,
-                    regression_tests_passed=True,
-                    syntax_valid=True,
-                    anti_pattern_detected=False,
-                    message="Patch successfully verified against target defect and full regression suite",
-                    failing_test_report=failing_report,
-                    regression_test_report=regression_report,
-                    execution_time_sec=time.time() - start_time,
-                )
-            else:
+            if not regression_report.passed:
                 return ValidationResult(
                     status=ValidationStatus.REGRESSED,
                     failing_test_passed=True if failing_report and failing_report.passed else False,
@@ -168,26 +245,44 @@ class ValidationEngine:
                     execution_time_sec=time.time() - start_time,
                 )
 
+            # 6. Flakiness stability verification (if enabled)
+            passed_flaky_runs = 1
+            if verify_flakiness and flakiness_runs > 1:
+                is_stable, additional_passed, _ = self.flakiness_detector.verify_stability(
+                    workspace, runs=flakiness_runs - 1, timeout_sec=timeout_sec
+                )
+                passed_flaky_runs += additional_passed
+                if not is_stable:
+                    return ValidationResult(
+                        status=ValidationStatus.REGRESSED,
+                        failing_test_passed=True,
+                        regression_tests_passed=False,
+                        syntax_valid=True,
+                        anti_pattern_detected=False,
+                        message=f"Flaky patch detected: failed repeated stability check ({passed_flaky_runs}/{flakiness_runs} passed)",
+                        failing_test_report=failing_report,
+                        regression_test_report=regression_report,
+                        execution_time_sec=time.time() - start_time,
+                        is_flaky=True,
+                        flakiness_runs=flakiness_runs,
+                        flakiness_passed=passed_flaky_runs,
+                    )
+
+            return ValidationResult(
+                status=ValidationStatus.ACCEPTED,
+                failing_test_passed=True,
+                regression_tests_passed=True,
+                syntax_valid=True,
+                anti_pattern_detected=False,
+                message="Patch successfully verified against target defect and full regression suite",
+                failing_test_report=failing_report,
+                regression_test_report=regression_report,
+                execution_time_sec=time.time() - start_time,
+                is_flaky=False,
+                flakiness_runs=flakiness_runs if verify_flakiness else 1,
+                flakiness_passed=flakiness_runs if verify_flakiness else 1,
+            )
+
         finally:
-            # 6. Guaranteed rollback of candidate
+            # 7. Guaranteed rollback of candidate
             target_file.write_text(original_content, encoding="utf-8")
-
-    def _detect_anti_patterns(self, replacement_code: str) -> tuple[bool, str]:
-        """Detect trivial/vacuous repair patterns."""
-        try:
-            tree = ast.parse(replacement_code)
-        except SyntaxError:
-            # Syntax errors will be caught separately
-            return False, ""
-
-        for node in ast.walk(tree):
-            # Check for empty exception silencing: except ...: pass
-            if isinstance(node, ast.ExceptHandler):
-                if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
-                    return True, "Suppresses exceptions with empty 'except: pass' block"
-            # Check for dummy empty function pass
-            if isinstance(node, ast.FunctionDef):
-                if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
-                    return True, "Replaces function body with empty 'pass' stub"
-
-        return False, ""

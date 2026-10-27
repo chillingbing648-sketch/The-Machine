@@ -24,8 +24,8 @@ class StrategySelector:
         if not available_strategies:
             return []
 
-        # Heuristic default ranking: deterministic templates first, followed by bounded search
-        default_order = ["deterministic_template", "search_ast"]
+        # Heuristic default ranking: deterministic templates first, followed by bounded search and neural synthesis
+        default_order = ["deterministic_template", "search_ast", "neural_llm"]
 
         # If DB is available, compute historical success rate
         historical_scores = self._compute_historical_weights(available_strategies)

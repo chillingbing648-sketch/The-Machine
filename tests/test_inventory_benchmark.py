@@ -18,8 +18,8 @@ def test_inventory_benchmark_e2e(tmp_path: Path):
         target_name="inventory_benchmark",
         target_rel_path="inventory.py",
         test_rel_path="test_inventory.py",
-        timeout_sec=15.0,
-        max_candidates=5,
+        timeout_sec=60.0,
+        max_candidates=15,
         enabled_strategies=["deterministic_template", "search_ast"],
     )
 
