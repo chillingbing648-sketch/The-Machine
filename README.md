@@ -543,7 +543,7 @@ The Machine enforces strict security and trust boundaries when evaluating untrus
 |   .machine_workspaces/<exp_id>/ (DISPOSABLE)                            |
 |                                                                         |
 |   [Subprocess Execution Sandbox]                                        |
-|   - Wall-clock timeout enforcement (default 30.0s)                      |
+|   - Wall-clock timeout enforcement (default 60.0s)                      |
 |   - CPU / memory isolation                                              |
 |   - Scrubbed environment variables (secrets, tokens, keys stripped)     |
 |   - Explicit non-shell argument vectors (no shell=True injection)       |
