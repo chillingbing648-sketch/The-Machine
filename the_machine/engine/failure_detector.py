@@ -20,7 +20,7 @@ class FailureDetector:
         self,
         workspace_path: Path,
         test_target: Optional[str] = None,
-        timeout_sec: float = 10.0,
+        timeout_sec: float = 30.0,
     ) -> TestExecutionReport:
         """
         Run pytest within workspace and parse results into structured telemetry.

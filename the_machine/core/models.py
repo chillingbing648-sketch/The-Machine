@@ -35,7 +35,7 @@ class ExperimentConfig:
     target_name: str
     target_rel_path: str
     test_rel_path: str
-    timeout_sec: float = 10.0
+    timeout_sec: float = 30.0
     random_seed: int = 42
     max_candidates: int = 10
     enabled_strategies: List[str] = field(default_factory=lambda: ["deterministic_template", "search_ast"])

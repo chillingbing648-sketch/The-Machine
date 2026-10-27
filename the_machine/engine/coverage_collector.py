@@ -41,7 +41,7 @@ class CoverageCollector:
         target_rel_path: str,
         test_rel_path: str,
         failing_tests: Optional[Set[str]] = None,
-        timeout_sec: float = 30.0,
+        timeout_sec: float = 60.0,
     ) -> CoverageMatrix:
         """
         Execute test suite under statement tracer and build SBFL contingency matrix.

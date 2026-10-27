@@ -25,7 +25,7 @@ class ValidationEngine:
         candidate: PatchCandidate,
         workspace_path: Path,
         failing_test_id: Optional[str] = None,
-        timeout_sec: float = 10.0,
+        timeout_sec: float = 30.0,
     ) -> ValidationResult:
         """
         Validate patch in workspace:
