@@ -4,7 +4,7 @@ import ast
 import difflib
 import uuid
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from the_machine.core.models import MutationRecord
 
 
@@ -103,6 +103,44 @@ class ConstantReturnSubstitutionMutation(MutationOperator):
         return ast.copy_location(ast.Return(value=ast.Constant(value=None)), node)
 
 
+class NullGuardRemovalMutation(MutationOperator):
+    """Corrupts or inverts defensive null / None / guard checks."""
+    name: str = "NULL_GUARD_REMOVAL"
+
+    def can_mutate(self, node: ast.AST) -> bool:
+        if isinstance(node, ast.Compare) and len(node.ops) == 1:
+            op = node.ops[0]
+            if isinstance(op, (ast.Is, ast.IsNot)):
+                if any(isinstance(c, ast.Constant) and c.value is None for c in node.comparators):
+                    return True
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return True
+        return False
+
+    def apply(self, node: ast.AST) -> ast.AST:
+        if not self.can_mutate(node):
+            return node
+        if isinstance(node, ast.Compare):
+            new_op = ast.IsNot() if isinstance(node.ops[0], ast.Is) else ast.Is()
+            return ast.copy_location(ast.Compare(left=node.left, ops=[new_op], comparators=node.comparators), node)
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return node.operand
+        return node
+
+
+class StatementDeletionMutation(MutationOperator):
+    """Replaces state modifications or assignments with pass."""
+    name: str = "STATEMENT_DELETION"
+
+    def can_mutate(self, node: ast.AST) -> bool:
+        return isinstance(node, (ast.AugAssign, ast.Assign))
+
+    def apply(self, node: ast.AST) -> ast.AST:
+        if not self.can_mutate(node):
+            return node
+        return ast.copy_location(ast.Pass(), node)
+
+
 class FaultInjector:
     """Systematic, AST-driven fault injector supporting narrow, traceable mutations."""
 
@@ -111,6 +149,8 @@ class FaultInjector:
         "BLI": BooleanInversionMutation(),
         "OB1": BoundaryOffByOneMutation(),
         "CRS": ConstantReturnSubstitutionMutation(),
+        "NGR": NullGuardRemovalMutation(),
+        "SDR": StatementDeletionMutation(),
     }
 
     def __init__(self, allowed_paths: Optional[List[str]] = None):
@@ -141,6 +181,44 @@ class FaultInjector:
                     targets.append((lineno, snippet))
 
         return targets
+
+    def catalogue_all_mutations(self, file_path: Path) -> List[dict]:
+        """Walk file AST and catalogue every feasible mutation across all operators."""
+        self._verify_path_allowed(file_path)
+        source = file_path.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        catalog = []
+
+        for node in ast.walk(tree):
+            lineno = getattr(node, "lineno", None)
+            if lineno is None:
+                continue
+            for op_key, operator in self.OPERATORS.items():
+                if operator.can_mutate(node):
+                    try:
+                        orig = ast.unparse(node)
+                        mut = ast.unparse(operator.apply(node))
+                        if orig != mut:
+                            catalog.append({
+                                "line_number": lineno,
+                                "operator_key": op_key,
+                                "operator_name": operator.name,
+                                "original_code": orig,
+                                "mutated_preview": mut,
+                            })
+                    except Exception:
+                        continue
+        return catalog
+
+    def verify_mutant_active(
+        self,
+        failure_detector: Any,
+        workspace_path: Path,
+        test_target: Optional[str] = None,
+    ) -> bool:
+        """Verify whether the injected mutant causes test suite failure (non-equivalent mutant)."""
+        report = failure_detector.run_tests(workspace_path, test_target=test_target)
+        return not report.passed
 
     def inject_mutation(
         self,

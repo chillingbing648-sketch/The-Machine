@@ -103,6 +103,19 @@ class ExperimentDatabase:
                 execution_time_sec REAL NOT NULL,
                 FOREIGN KEY (experiment_id) REFERENCES experiments (id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS localization_evaluations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                experiment_id TEXT NOT NULL,
+                ground_truth_line INTEGER NOT NULL,
+                predicted_rank INTEGER NOT NULL,
+                top_1 INTEGER NOT NULL,
+                top_3 INTEGER NOT NULL,
+                top_5 INTEGER NOT NULL,
+                reciprocal_rank REAL NOT NULL,
+                total_suspicious_lines INTEGER NOT NULL,
+                FOREIGN KEY (experiment_id) REFERENCES experiments (id) ON DELETE CASCADE
+            );
             """)
 
     def record_experiment_start(self, experiment_id: str, config: ExperimentConfig) -> None:
@@ -202,6 +215,29 @@ class ExperimentDatabase:
             conn.execute(
                 "UPDATE experiments SET status = ? WHERE id = ?",
                 (ExperimentStatus.LOCALIZED.value, experiment_id),
+            )
+
+    def record_localization_metrics(self, experiment_id: str, metrics: Any) -> None:
+        """Record localization accuracy evaluation metrics against ground truth."""
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO localization_evaluations (
+                    experiment_id, ground_truth_line, predicted_rank,
+                    top_1, top_3, top_5, reciprocal_rank, total_suspicious_lines
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    experiment_id,
+                    metrics.ground_truth_line,
+                    metrics.predicted_rank,
+                    1 if metrics.top_1 else 0,
+                    1 if metrics.top_3 else 0,
+                    1 if metrics.top_5 else 0,
+                    metrics.reciprocal_rank,
+                    metrics.total_suspicious_lines,
+                ),
             )
 
     def record_patch_evaluation(

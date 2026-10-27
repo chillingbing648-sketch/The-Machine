@@ -7,6 +7,7 @@ from .fault_localizer import FaultLocalizer
 from .repair_engine import RepairEngine, RepairStrategy
 from .validation_engine import ValidationEngine
 from .strategy_selector import StrategySelector
+from .coverage_collector import CoverageCollector, CoverageMatrix, TestCoverageResult
 
 __all__ = [
     "ExperimentManager",
@@ -17,4 +18,7 @@ __all__ = [
     "RepairStrategy",
     "ValidationEngine",
     "StrategySelector",
+    "CoverageCollector",
+    "CoverageMatrix",
+    "TestCoverageResult",
 ]

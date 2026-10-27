@@ -8,10 +8,10 @@ This roadmap outlines the systematic, phased implementation of The Machine from 
 
 | Phase | Title | Focus Area | Status |
 | :---: | :--- | :--- | :---: |
-| **0** | Discovery & Foundation | Baseline inspection, environment setup, architecture, research docs | **CURRENT** |
-| **1** | First Functioning Slice | End-to-end pipeline: mutation, detection, localization, repair, validation, DB | **CURRENT** |
-| **2** | Generalized Fault Injection | 5 AST mutation operators, multi-target support, mutation catalog | Planned |
-| **3** | Evidence-Based SBFL | Ochiai coverage matrix, stack slicing, ranking telemetry | Planned |
+| **0** | Discovery & Foundation | Baseline inspection, environment setup, architecture, research docs | **COMPLETED** |
+| **1** | First Functioning Slice | End-to-end pipeline: mutation, detection, localization, repair, validation, DB | **COMPLETED** |
+| **2** | Generalized Fault Injection | 6 AST mutation operators, multi-target benchmarks, mutation catalog | **COMPLETED** |
+| **3** | Evidence-Based SBFL | Ochiai coverage matrix, stack slicing, Top-1/Top-3/MRR metrics | **COMPLETED** |
 | **4** | Multi-Strategy Repair Engine | Template library, AST bounded search, pluggable LLM adapter | Planned |
 | **5** | Robust Validation & Sandboxing | Invariant checking, anti-triviality heuristics, strict resource limits | Planned |
 | **6** | Empirical Strategy Selection | Contextual bandit dispatch, historical repair learning | Planned |
@@ -30,26 +30,28 @@ This roadmap outlines the systematic, phased implementation of The Machine from 
 - [x] Dependency manifests (`pyproject.toml`, `requirements.txt`) configured.
 
 ### Phase 1 — First Functioning Vertical Slice
-- [ ] Working deterministic target module with comprehensive test suite (`benchmarks/calculator`).
-- [ ] Fault injection module capable of applying a traceable mutation and recording restoration data.
-- [ ] Failure detector executing tests via subprocess, capturing structured failure reports.
-- [ ] Fault localizer ranking failure locations based on stack traces and code analysis.
-- [ ] Repair engine synthesizing at least one candidate patch addressing the defect.
-- [ ] Validation engine executing tests against the patch in an isolated workspace, verifying fix and preventing regressions.
-- [ ] Experiment storage recording the complete trial in SQLite (`experiments.db`).
-- [ ] Non-destructive restoration guaranteeing the target workspace is cleanly recovered.
-- [ ] Comprehensive unit and integration test suite passing locally via `pytest`.
-- [ ] Automated end-to-end demonstration runnable via CLI (`python -m the_machine.cli demo`).
+- [x] Working deterministic target module with comprehensive test suite (`benchmarks/calculator`).
+- [x] Fault injection module capable of applying a traceable mutation and recording restoration data.
+- [x] Failure detector executing tests via subprocess, capturing structured failure reports.
+- [x] Fault localizer ranking failure locations based on stack traces and code analysis.
+- [x] Repair engine synthesizing at least one candidate patch addressing the defect.
+- [x] Validation engine executing tests against the patch in an isolated workspace, verifying fix and preventing regressions.
+- [x] Experiment storage recording the complete trial in SQLite (`experiments.db`).
+- [x] Non-destructive restoration guaranteeing the target workspace is cleanly recovered.
+- [x] Comprehensive unit and integration test suite passing locally via `pytest`.
+- [x] Automated end-to-end demonstration runnable via CLI (`python -m the_machine.cli demo`).
 
 ### Phase 2 — Generalized Fault Injection
-- [ ] Standardized mutation operators: Comparison Operators (COM), Boolean Logic Inversion (BLI), Off-by-One (OB1), Constant/Return Substitution (CRS), Null/Guard Removal (NGR).
-- [ ] Mutation safety filter preventing changes outside designated targets or inside test code.
-- [ ] Batch mutation generator producing reproducible fault suites with fixed random seeds.
+- [x] Standardized mutation operators: Comparison Operators (COM), Boolean Logic Inversion (BLI), Off-by-One (OB1), Constant/Return Substitution (CRS), Null/Guard Removal (NGR), Statement Deletion (SDR).
+- [x] Mutation safety filter preventing changes outside designated targets or inside test code.
+- [x] Batch mutation catalogue generator walking AST to discover all feasible mutation sites.
+- [x] Multi-target benchmark suite added (`benchmarks/inventory`).
 
 ### Phase 3 — Spectrum-Based Fault Localization (SBFL)
-- [ ] Code coverage collection tracking per-test line execution (passing vs. failing).
-- [ ] Ochiai and Tarantula metric implementations with configurable weights.
-- [ ] Evaluation harness calculating Top-1, Top-3, and Top-5 ranking accuracy.
+- [x] Code coverage collection tracking per-test line execution (passing vs. failing) via `CoverageCollector` and `SpectrumTracerPlugin`.
+- [x] Ochiai, Tarantula, and DStar metric implementations with contingency spectrum matrix ($e_f, e_p, n_f, n_p$).
+- [x] Hybrid ranking combining SBFL with Stack Trace Slicing (STS).
+- [x] Evaluation harness calculating Top-1, Top-3, Top-5, and Mean Reciprocal Rank (MRR) accuracy against ground truth.
 
 ### Phase 4 — Multi-Strategy Repair Engine
 - [ ] Strategy interface `RepairStrategy` with uniform candidate patch schema.

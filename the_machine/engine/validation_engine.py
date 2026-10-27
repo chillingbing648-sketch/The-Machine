@@ -1,6 +1,7 @@
 """Validation Engine: enforces test passage, regression safety, and anti-triviality invariants."""
 
 import ast
+import re
 import time
 from pathlib import Path
 from typing import Optional
@@ -66,19 +67,42 @@ class ValidationEngine:
 
         # 3. Syntax check
         original_content = target_file.read_text(encoding="utf-8")
-        # Generate patched content
-        if candidate.original_code not in original_content:
-            return ValidationResult(
-                status=ValidationStatus.REJECTED,
-                failing_test_passed=False,
-                regression_tests_passed=False,
-                syntax_valid=False,
-                anti_pattern_detected=False,
-                message="Original code snippet not found in target file",
-                execution_time_sec=time.time() - start_time,
-            )
+        # Line-targeted replacement with word boundary protection
+        lines = original_content.splitlines(keepends=True)
+        target_idx = candidate.line_number - 1
+        replaced = False
 
-        patched_content = original_content.replace(candidate.original_code, candidate.replacement_code, 1)
+        search_indices = [target_idx] + [target_idx + d for d in [1, -1, 2, -2, 3, -3, 4, -4]]
+        for idx in search_indices:
+            if 0 <= idx < len(lines) and candidate.original_code in lines[idx]:
+                pattern = r"\b" + re.escape(candidate.original_code) + r"\b"
+                if re.search(pattern, lines[idx]):
+                    lines[idx] = re.sub(pattern, candidate.replacement_code, lines[idx], count=1)
+                    replaced = True
+                    break
+                else:
+                    lines[idx] = lines[idx].replace(candidate.original_code, candidate.replacement_code, 1)
+                    replaced = True
+                    break
+
+        if replaced:
+            patched_content = "".join(lines)
+        else:
+            pattern = r"\b" + re.escape(candidate.original_code) + r"\b"
+            if re.search(pattern, original_content):
+                patched_content = re.sub(pattern, candidate.replacement_code, original_content, count=1)
+            elif candidate.original_code in original_content:
+                patched_content = original_content.replace(candidate.original_code, candidate.replacement_code, 1)
+            else:
+                return ValidationResult(
+                    status=ValidationStatus.REJECTED,
+                    failing_test_passed=False,
+                    regression_tests_passed=False,
+                    syntax_valid=False,
+                    anti_pattern_detected=False,
+                    message="Original code snippet not found in target file",
+                    execution_time_sec=time.time() - start_time,
+                )
         try:
             compile(patched_content, str(target_file), "exec")
         except SyntaxError as exc:

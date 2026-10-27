@@ -22,6 +22,7 @@ from the_machine.engine.fault_localizer import FaultLocalizer
 from the_machine.engine.repair_engine import RepairEngine
 from the_machine.engine.strategy_selector import StrategySelector
 from the_machine.engine.validation_engine import ValidationEngine
+from the_machine.engine.coverage_collector import CoverageCollector
 
 
 class ExperimentManager:
@@ -40,6 +41,7 @@ class ExperimentManager:
         self.repair_engine = RepairEngine()
         self.validation_engine = ValidationEngine(self.failure_detector)
         self.strategy_selector = StrategySelector(self.db)
+        self.coverage_collector = CoverageCollector()
 
     def provision_workspace(self, experiment_id: str, source_target_dir: Path) -> Path:
         """Create an isolated, disposable replica of the target project directory."""
@@ -118,10 +120,34 @@ class ExperimentManager:
 
             summary.status = ExperimentStatus.FAILED_DETECTED
 
-            # Step 3: Fault Localization
-            locations = self.fault_localizer.localize_fault(detection_report, workspace_path)
+            # Step 3: Fault Localization (SBFL + Stack Trace Slicing)
+            failing_test_ids = {f.test_id for f in detection_report.failures}
+            matrix = self.coverage_collector.collect_matrix(
+                workspace_path=workspace_path,
+                target_rel_path=config.target_rel_path,
+                test_rel_path=config.test_rel_path,
+                failing_tests=failing_test_ids,
+            )
+
+            locations = self.fault_localizer.localize_fault(
+                report=detection_report,
+                workspace_path=workspace_path,
+                matrix=matrix,
+                metric_name="ochiai",
+            )
             summary.suspicious_locations = locations
             self.db.record_locations(experiment_id, locations)
+
+            # Evaluate localization accuracy against ground truth mutation
+            if summary.mutation:
+                loc_metrics = self.fault_localizer.evaluate_localization(
+                    ranked_locations=locations,
+                    ground_truth_line=summary.mutation.line_number,
+                    window=2,
+                )
+                summary.localization_metrics = loc_metrics
+                self.db.record_localization_metrics(experiment_id, loc_metrics)
+
             summary.status = ExperimentStatus.LOCALIZED
 
             # Step 4: Strategy Selection

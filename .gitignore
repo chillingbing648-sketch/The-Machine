@@ -24,6 +24,7 @@ htmlcov/
 experiments/
 workspace_runs/
 runs/
+.machine_workspaces/
 
 # OS and Editor
 desktop.ini
